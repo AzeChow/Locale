@@ -88,7 +88,7 @@ public class CspZIPUtil {
 	}
 
 	public static void main(String[] args) {
-		String fileName = "D:/Projects/jbcus/workspace/jbcus3/CustomsBaseData/Unit.zip";
+		String fileName = "D:/Unit.zip";
 		// String fileName = "D:/11111111.zip";
 		StringBuffer stem = new StringBuffer();
 		stem.append("<Students>");
