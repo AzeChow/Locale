@@ -95,7 +95,7 @@ public class CspZIPUtil {
 		for (int i = 0; i < 10; i++) {
 			stem.append("  <Student>\n");
 			stem.append("    <code>" + i + "</code>\n");
-			stem.append("    <name>" + "某某某某公司" + i + "</name>\n");
+			stem.append("    <name>" + "东莞市百思维软件有限公司" + i + "</name>\n");
 			stem.append("  </Student>\n");
 		}
 		stem.append("</Students>\n");
