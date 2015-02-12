@@ -1,0 +1,446 @@
+﻿<?xml version="1.0"?>
+<project name="jbcus" default="build" basedir=".">
+        <property name="workdir" value="${basedir}/work" />	
+	<property name="project-name" value="jbcus" />
+	<property name="clientcommon.bin" value="${workdir}/${project-name}/bestwayclientcommon/bin" />
+	<property name="jbcus.bin" value="${workdir}/${project-name}/jbcus3/bin" />
+	<property name="jbcusclient.bin" value="${workdir}/${project-name}/jbcusclient/bin" />
+	<property name="jbcushelp.bin" value="${workdir}/${project-name}/jbcushelp/bin" />
+	<property name="clientcommon.src" value="${workdir}/${project-name}/bestwayclientcommon/src" />
+	<property name="jbcus.src" value="${workdir}/${project-name}/jbcus3/src" />
+	<property name="jbcusclient.src" value="${workdir}/${project-name}/jbcusclient/src" />
+	<property name="jbcushelp.src" value="${workdir}/${project-name}/jbcushelp/src" />
+	<property name="jbcushelp" value="${workdir}/${project-name}/jbcushelp" />
+	<property name="tomcat.dir" value="${workdir}/${project-name}/tomcat" />
+	<property name="tomcat.webapps" value="${tomcat.dir}/webapps" />
+	<property name="tomcat.root" value="${tomcat.dir}/webapps/ROOT" />
+	
+	<property name="src.doc.dir" value="${workdir}/${project-name}/jbcus3/src" />
+	
+	<property name="tomcat.bin" value="${workdir}/${project-name}/tomcat/bin" />
+	<property name="jbcusupgradeclient.bin" value="${workdir}/${project-name}/jbcusupgradeclient/bin"/>
+	<property name="alias" value="bestway" />
+	<property name="storepass" value="bestway" />
+	<property name="keypass" value="bestway" />
+	
+	<property name="clientcommon.dir"       value="${workdir}/${project-name}/bestwayclientcommon" />
+	<property name="jbcus.dir"              value="${workdir}/${project-name}/jbcus3" />
+	<property name="jbcusclient.dir"        value="${workdir}/${project-name}/jbcusclient" />	
+	<property name="jbcushelp.dir"          value="${workdir}/${project-name}/jbcushelp" />
+	<property name="lib"                    value="${workdir}/${project-name}/JavaLib3"/>	
+
+        <property name="install.dir"	        value="${workdir}/${project-name}/install"/>
+        <property name="ftp.dir"             	value="${workdir}/${project-name}/ftp"/>
+	
+	<path id="compile.classpath">
+	  <fileset dir="${lib}">
+	    <include name="**/*.jar"/>
+	    <include name="**/*.zip"/>
+	  </fileset>
+	</path>
+	
+        <path id="bestwayclientcommon.classpath">
+            <pathelement location="${clientcommon.bin}"/>
+            <path refid="compile.classpath"/>
+        </path>
+
+        <path id="jbcus.classpath">
+           <pathelement location="${jbcus.bin}"/>
+           <path refid="compile.classpath"/>
+        </path>
+
+        <path id="jbcusclient.classpath">
+           <pathelement location="${jbcusclient.bin}"/>
+           <path refid="bestwayclientcommon.classpath"/>
+           <path refid="jbcus.classpath"/>
+           <path refid="compile.classpath"/>
+        </path>
+    
+	<target name="prepare" description="Prepare the dirs for other tasks">
+                <delete dir="${workdir}" />		
+		<mkdir dir="${jbcus.bin}" />
+                <mkdir dir="${clientcommon.bin}" />
+                <mkdir dir="${jbcus.bin}" />
+                <mkdir dir="${jbcusclient.bin}" />
+                <mkdir dir="${jbcushelp.bin}" />
+                <mkdir dir="${lib}" />
+	</target>
+
+        <target name = "checkout" depends="prepare" >
+           <property name="svnaccount" value="--username guest --password 123456"/>
+
+           <exec executable="sh" failonerror="true" failifexecutionfails="true" outputproperty="branches">
+               <arg value="-c"/>
+               <arg value="svn list ${svnaccount} http://192.168.1.2/svn/jbcus/branches/ | sed 's@/@@' |tr '\n' ','"/>
+           </exec>
+
+           <input
+                message="请输入要打包的分支版本目录清单:"
+                addproperty="branche"
+                validargs="${branches}"
+           />
+           <echo message="你输入的是: ${branche}" />
+
+           <condition property="baseurl" value="http://192.168.1.2/svn/jbcus/trunk">
+                <equals arg1="${branche}" arg2="trunk" />
+           </condition>
+           <condition property="baseurl" value="http://192.168.1.2/svn/jbcus/branches/${branche}">
+                <not>
+                        <equals arg1="${branche}" arg2="trunk" />
+                </not>
+           </condition>
+
+           <echo message="svn checkout files"/>
+
+           <parallel>
+           <exec executable="svn" failonerror="true" failifexecutionfails="true">
+              <arg line="co ${svnaccount} --quiet http://192.168.1.2/svn/jbcus/trunk/bestwayclientcommon/ ${clientcommon.dir}"/>
+           </exec>
+           <exec executable="svn" failonerror="true" failifexecutionfails="true">
+              <arg line="co ${svnaccount} --quiet ${baseurl}/jbcus3/ ${jbcus.dir}"/>
+           </exec>
+           <exec executable="svn" failonerror="true" failifexecutionfails="true">
+              <arg line="co ${svnaccount} --quiet ${baseurl}/jbcusclient/ ${jbcusclient.dir}"/>
+           </exec>
+           <exec executable="svn" failonerror="true" failifexecutionfails="true">
+              <arg line="co ${svnaccount} --quiet http://192.168.1.2/svn/jbcus/trunk/jbcushelp/ ${jbcushelp.dir}"/>
+           </exec>
+           <exec executable="svn" failonerror="true" failifexecutionfails="true">
+              <arg line="co ${svnaccount} --quiet http://192.168.1.2/svn/jbcus/trunk/JavaLib3/ ${lib}"/>
+           </exec>
+           <exec executable="svn" failonerror="true" failifexecutionfails="true">
+              <arg line="co ${svnaccount} --quiet http://192.168.1.2/svn/install/jbcus/install-jbcus-trunk/ ${install.dir}"/>
+           </exec>
+           </parallel>
+
+        </target>
+
+	<target name = "javadoc" depends="checkout" >
+		<javadoc access="private" verbose="true" 
+			sourcepath="${src.doc.dir}" 
+			packagenames="**.entity.*"			
+			additionalparam="-J-Djavafx.javadoc=true -FilePath ${src.doc.dir}/javadoc.xml -encoding utf8">
+			<classpath>
+				<fileset dir="${lib}">
+					<include name="*.jar" />
+				</fileset>
+			</classpath>
+			<doclet name="JavaDoc">
+				<path>
+					<pathelement path="${install.dir}/bin"/>
+					<pathelement path="${lib}/jdom.jar"/>
+				</path>
+			</doclet>
+		</javadoc>
+	</target>
+	
+	
+	<target name="compile" depends="checkout" >
+		<javac destdir="${clientcommon.bin}" debug="off"
+	         optimize="on"
+			     fork="yes"
+			     memorymaximumsize="512m"
+	         target="1.6"
+	         source="1.6"
+		executable="/usr/lib/jvm/java-6-openjdk-i386/bin/javac"
+	         includeantruntime="no" >
+		    <compilerarg     line="-encoding UTF-8 "/> 
+			<src path="${clientcommon.src}"/>
+			<classpath refid="compile.classpath"/>
+		</javac>
+		
+		<copy todir="${clientcommon.bin}" 
+			preservelastmodified="true">
+			<fileset dir="${clientcommon.src}">
+				<include name="**/*.*" />
+				<exclude name="**/*.java" />
+			</fileset>
+		</copy>
+		
+		<javac srcdir="${jbcus.src}" destdir="${jbcus.bin}" debug="true"
+	         optimize="on"
+			     fork="yes"
+			     memorymaximumsize="512m"
+	         target="1.6"
+	         source="1.6"
+		executable="/usr/lib/jvm/java-6-openjdk-i386/bin/javac"
+	         includeantruntime="no" >
+		    <compilerarg     line="-encoding UTF-8 "/>
+			<classpath refid="compile.classpath"/>
+		</javac>
+		
+		<copy todir="${jbcus.bin}" 
+			preservelastmodified="true">
+			<fileset dir="${jbcus.src}">
+				<include name="**/*.*" />
+				<exclude name="**/*.java" />
+			</fileset>
+		</copy>
+		
+		<javac srcdir="${jbcusclient.src}" destdir="${jbcusclient.bin}" debug="off"
+	         optimize="on"
+			     fork="yes"
+			     memorymaximumsize="512m"
+	         target="1.6"
+	         source="1.6"
+		executable="/usr/lib/jvm/java-6-openjdk-i386/bin/javac"
+	         includeantruntime="no" >
+		    <compilerarg     line="-encoding UTF-8 "/>
+			<classpath refid="jbcusclient.classpath"/>
+		</javac>
+		
+		<copy todir="${jbcusclient.bin}" 
+			preservelastmodified="true">
+			<fileset dir="${jbcusclient.src}">
+				<include name="**/*.*" />
+				<exclude name="**/client.properties" />
+				<!--<exclude name="**/*.jrxml" />-->
+				<exclude name="**/*.java" />
+				<exclude name="**/client/plugin/**/*.*" />
+			</fileset>
+		</copy>
+		
+		<javac srcdir="${jbcushelp.src}" destdir="${jbcushelp.bin}" debug="off"
+	         optimize="on"
+			     fork="yes"
+			     memorymaximumsize="512m"
+	         target="1.6"
+	         source="1.6"
+		executable="/usr/lib/jvm/java-6-openjdk-i386/bin/javac"
+	         includeantruntime="no" >
+		    <compilerarg     line="-encoding UTF-8 "/>  
+			<classpath refid="compile.classpath"/>
+		</javac>
+		
+		<copy todir="${jbcushelp.bin}" 
+			preservelastmodified="true">
+			<fileset dir="${jbcushelp.src}">
+				<include name="**/*.*" />
+			</fileset>
+		</copy>
+		<!--
+		<javac classpathref="compile.classpath" srcdir="${clientcommon.src}" destdir="${clientcommon.bin}"/>
+		-->
+	</target>
+	
+	
+	<target name="build" depends="compile,javadoc">
+		
+		<delete dir="${tomcat.root}" />
+		<delete dir="${tomcat.webapps}/jbcushelp" />
+		<mkdir dir="${tomcat.root}" />
+		<mkdir dir="${tomcat.root}/jdk" />
+		<mkdir dir="${tomcat.root}/clientlib" />
+		<mkdir dir="${tomcat.root}/WEB-INF/lib" />
+		<mkdir dir="${tomcat.webapps}/jbcushelp" />
+		
+		<java classname="Version">
+			<arg 
+				value="${clientcommon.bin}/com/bestway/client/resource/versionInfo.properties"/>
+			<classpath>
+				<pathelement path="${install.dir}/bin"/>
+			</classpath>
+		</java>	
+		
+		<jar jarfile="${tomcat.root}/WEB-INF/lib/bestwayclientcommon.jar">
+			<fileset dir="${clientcommon.bin}">
+				<include name="**/*.*" />
+			</fileset>
+			<manifest>
+				<attribute name="bestwayclientcommon" value="1.0" />
+			</manifest>
+		</jar>
+		<jar jarfile="${tomcat.root}/WEB-INF/lib/jbcus.jar">
+			<fileset dir="${jbcus.bin}">
+				<include name="**/*.*" />
+				<exclude name="**/testMain/*.*" />
+				<exclude name="com/bestway/**/*Test*" />
+				<exclude name="web/*.*" />
+				<exclude name="**/jdbc.properties" />
+				<exclude name="**/web.xml" />				
+					
+			</fileset>
+			<manifest>
+				<attribute name="jbcus" value="1.0" />
+			</manifest>
+
+		</jar>		
+		<copy todir="${tomcat.root}/WEB-INF/" preservelastmodified="true">
+			<fileset dir="${jbcus.bin}">
+				<include name="**/web.xml" />
+				<include name="**/rmi.properties" />
+				<include name="**/mail.properties" />
+				<include name="**/log4j.properties" />
+			</fileset>
+		</copy>
+		<copy todir="${tomcat.root}/WEB-INF/" preservelastmodified="true">
+			<fileset dir="${install.dir}/server/properties">
+				<include name="*.*" />
+			</fileset>
+		</copy>
+		<copy todir="${tomcat.root}/WEB-INF/lib" preservelastmodified="true">
+			<fileset dir="${lib}">
+				<include name="**/*.jar" />
+			</fileset>
+		</copy>
+		
+		<copy todir="${tomcat.webapps}/jbcushelp/" preservelastmodified="true">
+			<fileset dir="${jbcushelp.bin}">
+				<include name="images/*.*" />
+
+			</fileset>
+		</copy>
+
+		<copy todir="${tomcat.webapps}/jbcushelp/" preservelastmodified="true">
+			<fileset dir="${jbcushelp.bin}">
+				<include name="com/bestway/help/**/*.*" />
+				<include name="com/bestway/help/**/**/*.*" />
+			</fileset>
+		</copy>
+
+		
+		<copy todir="${tomcat.webapps}/jbcushelp/" preservelastmodified="true">
+			<fileset dir="${jbcushelp}">
+				<include name="*.html" />
+				<include name="*.js" />
+				<include name="*.jsp" />
+				<include name="*.tld" />
+				<include name="*.txt" />
+			</fileset>
+		</copy>
+		
+		<copy todir="${tomcat.webapps}/jbcushelp/" preservelastmodified="true">
+			<fileset dir="${jbcushelp}">
+				<include name="WEB-INF/**" />
+			</fileset>
+		</copy>
+		<jar jarfile="${tomcat.root}/WEB-INF/lib/jbcusclient.jar">
+			<fileset dir="${jbcus.bin}">
+				<include name="**/entity/*.class" />
+				<include name="**/entity/*/*.class" />
+				<include name="com/bestway/common/*.*" />
+				<include name="com/bestway/**/constant/*.*" />
+				<include name="com/bestway/common/authority/*.*" />
+				<include name="com/bestway/common/authority/acl/*.*" />
+				<include name="**/action/*.*" />
+				<include name="**/authority/*.*" />
+			</fileset>
+			<fileset dir="${jbcusclient.bin}">
+				<include name="**/*.*" />
+				<exclude name="**/client.properties" />
+				<exclude name="**/client/plugin/**/*.*" />
+				<!--<exclude name="**/*.jrxml" />-->
+			</fileset>
+			<manifest>
+				<attribute name="jbcusclient" value="1.0" />
+			</manifest>
+		</jar>
+		<jar jarfile="${tomcat.root}/WEB-INF/lib/jbcushelp.jar">
+			<fileset dir="${jbcushelp.bin}">
+				<include name="**/*.*" />
+			</fileset>
+			<manifest>
+				<attribute name="jbcushelp" value="1.0" />
+			</manifest>
+		</jar>
+		
+		<jar jarfile="${tomcat.root}/WEB-INF/lib/jbcuscustoms.jar">
+			<fileset dir="${jbcus.bin}">			
+				<include name="com/bestway/bcus/input/*.*" />	
+			</fileset>
+			<manifest>
+				<attribute name="jbcuscustoms" value="1.0" />
+			</manifest>
+
+		</jar>
+		<copy todir="${tomcat.root}/clientlib" preservelastmodified="true">
+			<fileset dir="${tomcat.root}/WEB-INF/lib">
+				<include name="jbcusclient.jar" />
+				<include name="bestwayclientcommon.jar" />
+				<include name="jhall.jar" />
+				<include name="jbcushelp.jar" />				
+				<include name="jasperreports-3.0.0.jar" />
+				<include name="jdt-compiler-3.1.1.jar" />
+				<include name="barbecue-1.1.jar" />
+				<include name="itext-1.3.1.jar" />
+				<include name="iTextAsian.jar" />
+				<include name="spring.jar" />
+				<include name="aopalliance.jar" />
+				<include name="hessian-3.0.20.jar" />
+				<include name="commons-logging.jar" />
+				<include name="jdom.jar" />
+				<include name="jxl.jar" />				
+				<include name="commons-beanutils.jar" />
+				<include name="commons-collections.jar" />
+				<include name="commons-lang.jar" />				
+				<include name="jcommon-1.0.0.jar" />
+				<include name="jfreechart-1.0.1.jar" />
+				<include name="pf-joi-full.jar" />
+				<include name="poi-2.5.jar" />
+        			<include name="mail.jar" />
+			        <include name="activation.jar" />
+			        <include name="commons-digester.jar" />
+				<include name="dom4j-1.6.1.jar" />
+				<include name="commons-net-3.1.jar" />
+				<include name="gson-2.2.2.jar" />
+				<include name="jptds.jar" />
+			</fileset>
+		</copy>
+
+		<signjar keystore="${install.dir}/keytool/bestway.keystore" alias="${alias}" 
+			storepass="${storepass}" keypass="${keypass}" lazy="true">
+			<fileset dir="${tomcat.root}/clientlib">
+				<include name="**/*.jar" />
+			</fileset>
+		</signjar>
+
+		<copy todir="${tomcat.root}" preservelastmodified="true">
+			<fileset dir="${install.dir}/webroot">
+				<include name="**/*.*" />
+			</fileset>
+			<fileset dir="${install.dir}/doc">
+				<include name="**/*.*" />
+			</fileset>
+		</copy>
+		<copy todir="${workdir}/../" preservelastmodified="true">
+			<fileset dir="${install.dir}/server">
+				<include name="run.*" />
+			</fileset>
+		</copy>	
+		
+		<!--下面设置日期时间格式-->
+		 <tstamp prefix="my">
+		        <format property="day" pattern="yyyy-MM-dd"/>
+		        <format property="time" pattern="HH:mm:ss"/>
+		        <format property="dt" pattern="yyyy-MM-dd-HH:mm:ss"/>
+    		</tstamp>
+    
+    		<property name="rootName"  value="${branche}-${my.day}"/>	
+    		<!--在主干文件下创建lib文件夹和libcilent文件夹-->			<property name="rootNamelib"  value="lib"/>				<property name="rootNamelibcilent"  value="clientlib"/>	        		<mkdir dir="${ftp.dir}/${rootName}"/>			<delete dir="${ftp.dir}/${rootName}/${rootNamelib}" />			<delete dir="${ftp.dir}/${rootName}/${rootNamelibcilent}" />			<mkdir dir="${ftp.dir}/${rootName}/${rootNamelib}"/>			<mkdir dir="${ftp.dir}/${rootName}/${rootNamelibcilent}"/>
+		
+    		<copy todir="${ftp.dir}/${rootName}/${rootNamelib}" preservelastmodified="true">
+			<fileset dir="${tomcat.root}/WEB-INF/lib">
+			     <include name="jbcus.jar" />
+			     <include name="jbcuscustoms.jar" />
+			</fileset>
+    		</copy>
+		
+    		<copy todir="${ftp.dir}/${rootName}/${rootNamelibcilent}" preservelastmodified="true">
+			<fileset dir="${tomcat.root}/clientlib/">				
+	     			<include name="jbcusclient.jar" />
+	     			<include name="bestwayclientcommon.jar" />
+	     			<include name="jbcushelp.jar" />
+   	     			<include name="commons-digester.jar" />
+	     			<include name="jasperreports-3.0.0.jar" />
+	     			<include name="commons-net-3.1.jar" />
+	     			<include name="gson-2.2.2.jar" />
+	     			<include name="jptds.jar" />
+			</fileset>
+   		</copy>
+   		<echo message="ftp upload files to ${rootName}"/>
+   		<exec executable="/usr/bin/lftp" failonerror="false">
+        		<arg line="-c 'open 192.168.2.7;user kfb kfb2008;cd /软件产品发布/JBCUS/主程序发布包/;mirror -R ${ftp.dir}/${rootName}/ ${rootName}'"/>
+   		</exec>
+
+	</target>
+</project>
